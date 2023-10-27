@@ -4,8 +4,9 @@ from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework.authtoken.views import ObtainAuthToken
 from rest_framework import generics, permissions
+from login.models import EmployeeModel
 
-from login.serializers import UserLoginSerializer, UserSerializer
+from login.serializers import EmployeeModelSerializer, UserLoginSerializer, UserSerializer
 from rest_framework.views import APIView
 from django.contrib.auth import authenticate
 from rest_framework import status
@@ -66,4 +67,8 @@ class UserLoginView(APIView):
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+
+class EmployeeModelList(generics.ListAPIView):
+    queryset = EmployeeModel.objects.all()
+    serializer_class = EmployeeModelSerializer
 
