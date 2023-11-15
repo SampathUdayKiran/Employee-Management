@@ -14,3 +14,9 @@ class EmployeeModel(models.Model):
     nationality=models.CharField(max_length=255)
     address=models.CharField(max_length=255)
     user=models.ForeignKey(User,on_delete=models.CASCADE)
+
+class FileUpload(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField()
+    file = models.FileField(upload_to='uploads/')
+

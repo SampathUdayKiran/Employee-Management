@@ -1,0 +1,41 @@
+step 1: In settings.py
+	DEBUG = True
+	STATIC_ROOT=os.path.join(BASE_DIR,'static')
+
+step 2: In console do 
+	python manage.py collectstatic
+	 pip freeze > requirements.txt
+
+step 3:Initilaize git repository and push the code to git
+
+step 4: Create pythonanywhere account
+
+step 5: open Console => bash => and run commands
+
+	-> git clone repo url 
+	-> cd repo name
+	-> mkvirtualenv --python=/usr/bin/python3.8 myenv
+	-> pip install -r requirements.txt
+
+step 6: choose Add a new web app and add paths where ever required(source code, virtual env,static files) by choosing files
+
+step 7: Finally Add Wsgi Configuration in the file and reload  the web app
+
+	Wsgi Configuration:
+	
+
+	import sys
+	import os
+
+	path='/home/UdayKiran15/Employee-Management'
+	if path not in sys.path:
+    		sys.path.insert(0,path)
+	os.environ['DJANGO_SETTINGS_MODULE']='alfazance.settings'
+
+	from django.core.wsgi import get_wsgi_application
+	application=get_wsgi_application()
+
+	# Add your custom paths
+
+
+#The deployment is ready you can use it freely

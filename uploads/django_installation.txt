@@ -1,0 +1,47 @@
+Installation using pipenv
+
+
+=> pip install pipenv
+
+=> create a directory to store python projects
+
+=> In that directory install django using pipenv
+	pipenv install django
+=> Activate virtual env by running command
+	pipenv shell
+=> create a new project using the command
+	django-admin startproject projectname
+
+=> create a new app in the project use the command
+	 python manage.py startapp appname
+
+=> jinja vscode extension 
+
+=>  py manage.py makemigrations 
+
+=>py manage.py migrate
+
+
+
+
+
+
+Installation using venv
+
+=>python -m venv myworld  #creates the virtual environment myworld in the current folder
+
+=>myworld\Scripts\activate.bat  #Activates the virtual env
+
+=>py -m pip install Django  #Installs the django in the virtual env
+
+=>django-admin --version  #for checking Django Version
+
+=> django-admin startproject project_name  #for creating a new project
+
+
+* context managers
+
+
+
+
+
