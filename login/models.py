@@ -26,3 +26,22 @@ class FileUpload(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     file = models.FileField(upload_to='uploads/')
+
+class LeavesModel(models.Model):
+    total_annual_leaves=models.IntegerField()
+    leaves_consumed=models.IntegerField()
+    total_sick_leaves=models.IntegerField()
+    sick_leaves_consumed=models.IntegerField()
+    employee_id=models.ForeignKey(EmployeeModel,on_delete=models.CASCADE)
+
+class LeavesHistoryModel(models.Model):
+    from_date=models.DateField(default=timezone.now)
+    to_date=models.DateField(default=timezone.now)
+    number_of_days=models.IntegerField()
+    approved_by=models.CharField(max_length=255)
+    status = models.CharField(max_length=255)
+    leave_type=models.CharField(max_length=255)
+    reason=models.TextField()
+    employee_id=models.ForeignKey(EmployeeModel,on_delete=models.CASCADE)
+    
+

@@ -13,11 +13,12 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView
-from .models import FileUpload
-from .serializers import FileUploadSerializer
+from .models import FileUpload, LeavesHistoryModel, LeavesModel
+from .serializers import FileUploadSerializer, LeavesHistorySerializer, LeavesModelSerializer
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 import subprocess
+from rest_framework import viewsets
 
 
 # @api_view(['GET', 'POST'])
@@ -117,3 +118,45 @@ class EmployeeDetailsAPIView(APIView):
             return Response(serializer.data)
         except EmployeeModel.DoesNotExist:
             return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class EmployeeLeavesAPIView(APIView):
+    def get(self, request, emp_id, format=None):
+        try:
+            leaves_details = LeavesModel.objects.get(employee_id=emp_id)
+            serializer = LeavesModelSerializer(leaves_details)
+            return Response(serializer.data)
+        except LeavesModel.DoesNotExist:
+            return Response({"error": "Leaves Details not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+class LeavesHistoryViewSet(viewsets.ModelViewSet):
+    queryset = LeavesHistoryModel.objects.all()
+    serializer_class = LeavesHistorySerializer
+    def get_queryset(self):
+        employee_id = self.kwargs['employee_id']
+        return LeavesHistoryModel.objects.filter(employee_id=employee_id)
+
+
+class ApplyLeaveAPIView(APIView):
+    # def post(self, request):
+    #     serializer = LeavesHistorySerializer(data=request.data)
+    #     if serializer.is_valid():
+    #         serializer.save()
+    #         return Response(serializer.data, status=status.HTTP_201_CREATED)
+    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def post(self, request, *args, **kwargs):
+        serializer = LeavesHistorySerializer(data=request.data)
+        if serializer.is_valid():
+            employee_id = serializer.validated_data['employee_id']
+            leaves_model = LeavesModel.objects.get(employee_id=employee_id)
+            # from_date = serializer.validated_data['from_date']
+            # to_date = serializer.validated_data['to_date']
+            # number_of_days = (to_date - from_date).days + 1
+            # serializer.validated_data['number_of_days'] = number_of_days
+            serializer.save()
+            # leave_details=LeavesModel.objects.get(employee_id=serializer.validated_data['employee_id'])
+            # Return a successful response
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        # Return an error response if validation fails
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
