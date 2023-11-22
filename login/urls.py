@@ -12,7 +12,7 @@ urlpatterns = [
     path('download/<int:file_id>/', download_file, name='download-file'),
     path('async', YourApiView.as_view(), name='async'),
     path('employee/create/', EmployeeCreateAPIView.as_view(), name='employee-create'),
-    path('employee-details/<int:emp_id>/', EmployeeDetailsAPIView.as_view(), name='employee-details'),
+    path('employee-details/<int:user_id>/', EmployeeDetailsAPIView.as_view(), name='employee-details'),
     path('employee-leaves-details/<int:emp_id>/', EmployeeLeavesAPIView.as_view(), name='employee-leaves-details'),
     path('employee-leave-apply/', ApplyLeaveAPIView.as_view(), name='employee-leave-apply'),
     path('', include(router.urls)),    

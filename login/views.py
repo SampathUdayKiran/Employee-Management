@@ -17,8 +17,10 @@ from django.shortcuts import get_object_or_404
 import subprocess
 from rest_framework import viewsets
 
+
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserSerializer
+
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -28,8 +30,10 @@ class UserRegistrationView(generics.CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 class UserLoginView(generics.CreateAPIView):
     serializer_class = UserLoginSerializer
+
     def post(self, request):
         serializer = UserLoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -46,22 +50,27 @@ class UserLoginView(generics.CreateAPIView):
         else:
             return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
 
+
 class UserListView(generics.ListAPIView):
     queryset = User.objects.all()
     serializer_class = UserSerializer
     # permission_classes = [IsAuthenticated]
+
 
 class EmployeeModelList(generics.ListAPIView):
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeModelSerializer
     # permission_classes = [IsAuthenticated]
 
+
 class FileUploadView(CreateAPIView):
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
 
+
 class EmployeeCreateAPIView(generics.CreateAPIView):
     serializer_class = EmployeeModelSerializer
+
     def post(self, request, format=None):
         serializer = EmployeeModelSerializer(data=request.data)
         if serializer.is_valid():
@@ -69,12 +78,14 @@ class EmployeeCreateAPIView(generics.CreateAPIView):
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+
 def download_file(request, file_id):
     file = get_object_or_404(FileUpload, id=file_id)
     file_path = file.file.path
     response = FileResponse(open(file_path, 'rb'))
     response['Content-Disposition'] = f'attachment; filename="{file.name}"'
     return response
+
 
 class YourApiView(APIView):
     def get(self, request):
@@ -85,14 +96,16 @@ class YourApiView(APIView):
         except Exception as e:
             return Response({'error': 'API request failed', 'exception': str(e)}, status=500)
 
+
 class EmployeeDetailsAPIView(APIView):
-    def get(self, request, emp_id, format=None):
+    def get(self, request, user_id, format=None):
         try:
-            employee = EmployeeModel.objects.get(pk=emp_id)
+            employee = EmployeeModel.objects.get(user=user_id)
             serializer = EmployeeModelSerializer(employee)
             return Response(serializer.data)
         except EmployeeModel.DoesNotExist:
             return Response({"error": "Employee not found"}, status=status.HTTP_404_NOT_FOUND)
+
 
 class EmployeeLeavesAPIView(APIView):
     def get(self, request, emp_id, format=None):
@@ -103,29 +116,33 @@ class EmployeeLeavesAPIView(APIView):
         except LeavesModel.DoesNotExist:
             return Response({"error": "Leaves Details not found"}, status=status.HTTP_404_NOT_FOUND)
 
+
 class LeavesHistoryViewSet(viewsets.ModelViewSet):
     queryset = LeavesHistoryModel.objects.all()
     serializer_class = LeavesHistorySerializer
+
     def get_queryset(self):
         employee_id = self.kwargs['employee_id']
         return LeavesHistoryModel.objects.filter(employee_id=employee_id)
 
+
 class ApplyLeaveAPIView(generics.CreateAPIView):
     serializer_class = ApplyLeavesSerializer
+
     def post(self, request, *args, **kwargs):
         serializer = ApplyLeavesSerializer(data=request.data)
         if serializer.is_valid():
             employee_id = serializer.validated_data['employee']
             leaves_model = LeavesModel.objects.get(employee_id=employee_id)
             if (serializer.validated_data['leave_type'] == 'sick'):
-                if(leaves_model.total_sick_leaves-leaves_model.sick_leaves_consumed>=serializer.validated_data['number_of_days']):
+                if (leaves_model.total_sick_leaves-leaves_model.sick_leaves_consumed >= serializer.validated_data['number_of_days']):
                     leaves_model.total_sick_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.sick_leaves_consumed += serializer.validated_data['number_of_days']
                 else:
                     return Response({'message': 'Exceeded maximum sick leave limit'}, status=status.HTTP_400_BAD_REQUEST)
             elif (serializer.validated_data['leave_type'] == 'casual'):
-                if(leaves_model.total_casual_leaves-leaves_model.casual_leaves_consumed>=serializer.validated_data['number_of_days']):
+                if (leaves_model.total_casual_leaves-leaves_model.casual_leaves_consumed >= serializer.validated_data['number_of_days']):
                     leaves_model.total_casual_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.casual_leaves_consumed += serializer.validated_data['number_of_days']
