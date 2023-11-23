@@ -48,8 +48,7 @@ class LeavesHistorySerializer(serializers.ModelSerializer):
 class ApplyLeavesSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeavesHistoryModel
-        exclude = ['approved_by', 'number_of_days']
-
+        exclude = ['approved_by', 'number_of_days','status']
     def validate(self, data):
         from_date = data.get('from_date')
         to_date = data.get('to_date')
@@ -59,4 +58,5 @@ class ApplyLeavesSerializer(serializers.ModelSerializer):
             data['number_of_days'] = number_of_days
         if notify:
             data['approved_by'] = notify
+        data['status']='PENDING'
         return data
