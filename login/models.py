@@ -25,6 +25,7 @@ class FileUpload(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     file = models.FileField(upload_to='uploads/')
+    employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
 
 
 class LeavesModel(models.Model):
@@ -42,10 +43,11 @@ class LeavesHistoryModel(models.Model):
     from_date = models.DateField(default=timezone.now)
     to_date = models.DateField(default=timezone.now)
     number_of_days = models.IntegerField()
-    approved_by = models.CharField(max_length=255)
+    approved_by = models.ForeignKey(
+        EmployeeModel, on_delete=models.CASCADE, related_name='approve_notifications', default=1)
     status = models.CharField(max_length=255)
     leave_type = models.CharField(max_length=255)
     reason = models.TextField()
     employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
     notify = models.ForeignKey(
-        EmployeeModel, on_delete=models.CASCADE, related_name='leave_notifications', default=0)
+        EmployeeModel, on_delete=models.CASCADE, related_name='leave_notifications', default=1)

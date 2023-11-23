@@ -2,6 +2,7 @@ import os
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
 from rest_framework import generics
+from alfazance import settings
 from login.models import EmployeeModel
 from login.serializers import EmployeeModelSerializer, UserLoginSerializer, UserSerializer
 from rest_framework.views import APIView
@@ -61,13 +62,36 @@ class EmployeeModelList(generics.ListAPIView):
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeModelSerializer
     # permission_classes = [IsAuthenticated]
+class EmployeePositionAPIView(generics.ListAPIView):
+    serializer_class = EmployeeModelSerializer
+
+    def get_queryset(self):
+        position = self.kwargs['employee_position']
+        return EmployeeModel.objects.filter(employee_position=position)
 
 
 class FileUploadView(CreateAPIView):
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
+    def create(self, request, *args, **kwargs):
+        employee_id = request.data.get('employee')
+        print(request.data)
+        file_upload_instance = FileUpload.objects.filter(employee=employee_id).first()
+        if file_upload_instance:
+            existing_file_path = os.path.join(settings.MEDIA_ROOT, str(file_upload_instance.file))
+            if os.path.exists(existing_file_path):
+                os.remove(existing_file_path)
+            serializer = self.get_serializer(file_upload_instance, data=request.data, partial=True)
+        else:
+            serializer = self.get_serializer(data=request.data)
 
+       
+        serializer.is_valid(raise_exception=True)
+    
+        self.perform_create(serializer)
 
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    
 class EmployeeCreateAPIView(generics.CreateAPIView):
     serializer_class = EmployeeModelSerializer
 
@@ -125,10 +149,8 @@ class LeavesHistoryViewSet(viewsets.ModelViewSet):
         employee_id = self.kwargs['employee_id']
         return LeavesHistoryModel.objects.filter(employee_id=employee_id)
 
-
 class ApplyLeaveAPIView(generics.CreateAPIView):
     serializer_class = ApplyLeavesSerializer
-
     def post(self, request, *args, **kwargs):
         serializer = ApplyLeavesSerializer(data=request.data)
         if serializer.is_valid():
@@ -152,5 +174,5 @@ class ApplyLeaveAPIView(generics.CreateAPIView):
                 leaves_model.unpaid_leaves_consumed += serializer.validated_data['number_of_days']
             leaves_model.save()
             serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response({'message': 'Leave applied sucessfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

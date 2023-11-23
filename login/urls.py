@@ -1,5 +1,5 @@
 from django.urls import include, path
-from .views import ApplyLeaveAPIView, EmployeeCreateAPIView, EmployeeDetailsAPIView, EmployeeLeavesAPIView, EmployeeModelList, FileUploadView, LeavesHistoryViewSet, UserRegistrationView, UserLoginView, UserListView, YourApiView, download_file
+from .views import ApplyLeaveAPIView, EmployeeCreateAPIView, EmployeeDetailsAPIView, EmployeeLeavesAPIView, EmployeeModelList, EmployeePositionAPIView, FileUploadView, LeavesHistoryViewSet, UserRegistrationView, UserLoginView, UserListView, YourApiView, download_file
 from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r'leaveshistory/(?P<employee_id>[^/.]+)', LeavesHistoryViewSet, basename='leaveshistory')
@@ -15,5 +15,6 @@ urlpatterns = [
     path('employee-details/<int:user_id>/', EmployeeDetailsAPIView.as_view(), name='employee-details'),
     path('employee-leaves-details/<int:emp_id>/', EmployeeLeavesAPIView.as_view(), name='employee-leaves-details'),
     path('employee-leave-apply/', ApplyLeaveAPIView.as_view(), name='employee-leave-apply'),
-    path('', include(router.urls)),    
+    path('', include(router.urls)),
+    path('employees-position/<str:employee_position>/', EmployeePositionAPIView.as_view(), name='employee-position-api')   
 ]
