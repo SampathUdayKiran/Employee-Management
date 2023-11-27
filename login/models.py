@@ -38,16 +38,23 @@ class LeavesModel(models.Model):
     unpaid_leaves_consumed = models.IntegerField(default=0)
     employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
 
-
 class LeavesHistoryModel(models.Model):
     from_date = models.DateField(default=timezone.now)
     to_date = models.DateField(default=timezone.now)
     number_of_days = models.IntegerField()
-    approved_by = models.ForeignKey(
-        EmployeeModel, on_delete=models.CASCADE, related_name='approve_notifications', default=1)
+    approved_by = models.CharField(max_length=255)
     status = models.CharField(max_length=255)
     leave_type = models.CharField(max_length=255)
     reason = models.TextField()
     employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
     notify = models.ForeignKey(
         EmployeeModel, on_delete=models.CASCADE, related_name='leave_notifications', default=1)
+    
+class AttendenceLogModel(models.Model):
+    check_in_date=models.DateField()
+    check_in_time=models.TimeField()
+    check_out_time=models.TimeField()
+    effective_hours=models.TimeField()
+    gross_hours=models.TimeField()
+    employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
+

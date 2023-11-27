@@ -20,6 +20,8 @@ class LoginSerializer(serializers.Serializer):
     username = serializers.CharField()
     password = serializers.CharField()
 
+class EmployeeLeaveApproveSerializer(serializers.Serializer):
+    leave_id=serializers.IntegerField()
 
 class EmployeeModelSerializer(serializers.ModelSerializer):
     class Meta:
@@ -48,7 +50,8 @@ class LeavesHistorySerializer(serializers.ModelSerializer):
 class ApplyLeavesSerializer(serializers.ModelSerializer):
     class Meta:
         model = LeavesHistoryModel
-        exclude = ['approved_by', 'number_of_days','status']
+        exclude = ['approved_by', 'number_of_days', 'status']
+
     def validate(self, data):
         from_date = data.get('from_date')
         to_date = data.get('to_date')
@@ -57,6 +60,6 @@ class ApplyLeavesSerializer(serializers.ModelSerializer):
             number_of_days = (to_date - from_date).days + 1
             data['number_of_days'] = number_of_days
         if notify:
-            data['approved_by'] = notify
-        data['status']='PENDING'
+            data['approved_by'] = '-'
+        data['status'] = 'PENDING'
         return data

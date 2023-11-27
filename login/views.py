@@ -12,11 +12,16 @@ from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView
 from .models import FileUpload, LeavesHistoryModel, LeavesModel
-from .serializers import ApplyLeavesSerializer, FileUploadSerializer, LeavesHistorySerializer, LeavesModelSerializer
+from .serializers import ApplyLeavesSerializer, EmployeeLeaveApproveSerializer, FileUploadSerializer, LeavesHistorySerializer, LeavesModelSerializer
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 import subprocess
 from rest_framework import viewsets
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.utils.http import urlencode
+from rest_framework.decorators import api_view
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -158,21 +163,111 @@ class ApplyLeaveAPIView(generics.CreateAPIView):
             leaves_model = LeavesModel.objects.get(employee_id=employee_id)
             if (serializer.validated_data['leave_type'] == 'sick'):
                 if (leaves_model.total_sick_leaves-leaves_model.sick_leaves_consumed >= serializer.validated_data['number_of_days']):
-                    leaves_model.total_sick_leaves -= serializer.validated_data['number_of_days']
-                    leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
+                    # leaves_model.total_sick_leaves -= serializer.validated_data['number_of_days']
+                    # leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.sick_leaves_consumed += serializer.validated_data['number_of_days']
+                    leaves_model.leaves_consumed += serializer.validated_data['number_of_days']
                 else:
                     return Response({'message': 'Exceeded maximum sick leave limit'}, status=status.HTTP_400_BAD_REQUEST)
             elif (serializer.validated_data['leave_type'] == 'casual'):
                 if (leaves_model.total_casual_leaves-leaves_model.casual_leaves_consumed >= serializer.validated_data['number_of_days']):
-                    leaves_model.total_casual_leaves -= serializer.validated_data['number_of_days']
-                    leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
+                    # leaves_model.total_casual_leaves -= serializer.validated_data['number_of_days']
+                    # leaves_model.total_annual_leaves -= serializer.validated_data['number_of_days']
                     leaves_model.casual_leaves_consumed += serializer.validated_data['number_of_days']
+                    leaves_model.leaves_consumed += serializer.validated_data['number_of_days']
                 else:
                     return Response({'message': 'Exceeded maximum casual leave limit'}, status=status.HTTP_400_BAD_REQUEST)
             else:
                 leaves_model.unpaid_leaves_consumed += serializer.validated_data['number_of_days']
             leaves_model.save()
-            serializer.save()
+            instance=serializer.save()
+            send_email(instance)
             return Response({'message': 'Leave applied sucessfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+
+# class EmployeeLeaveApproveAPI(generics.CreateAPIView):
+#     serializer_class = EmployeeLeaveApproveSerializer
+#     def post(self, request, format=None):
+#         serializer = EmployeeLeaveApproveSerializer(data=request.data)
+#         if serializer.is_valid():
+#             leave=LeavesHistoryModel.objects.get(pk=serializer.data['leave_id'])
+#             leave.approved_by=leave.notify
+#             leave.status='APPROVED'
+#             return Response({'message': 'Leave approved'}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+class EmployeeLeaveApproveAPI(APIView):
+    def get(self, request,leave_id):
+        try:
+            leave=LeavesHistoryModel.objects.get(pk=leave_id)
+            if(leave.status=='PENDING'):
+                leave.approved_by=leave.notify.employee_name
+                leave.status='APPROVED'
+                leave.save()
+                return Response({'message': 'Leave approved'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'message': 'Action not allowed'}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            print(e)
+class EmployeeLeaveCancelAPI(APIView):
+    def get(self, request,leave_id):
+        try:
+            leave=LeavesHistoryModel.objects.get(pk=leave_id)
+            if(leave.status=='PENDING'):
+                leave.approved_by=leave.notify.employee_name
+                leave.status='CANCELLED'
+                leaves_model = LeavesModel.objects.get(employee_id=leave.employee.employee_id)
+                if(leave.leave_type=='sick'):
+                    leaves_model.sick_leaves_consumed-=leave.number_of_days
+                    leaves_model.leaves_consumed-=leave.number_of_days
+                elif(leave.leave_type=='casual'):
+                    leaves_model.casual_leaves_consumed-=leave.number_of_days
+                    leaves_model.leaves_consumed-=leave.number_of_days
+                else:
+                    leaves_model.unpaid_leaves_consumed-=leave.number_of_days
+                leave.save()
+                leaves_model.save()
+                return Response({'message': 'Leave cancelled'}, status=status.HTTP_201_CREATED)
+            else:
+                return Response({'message': 'Action not allowed'}, status=status.HTTP_400_BAD_REQUEST)
+
+        except Exception as e:
+            print(e)
+    
+def send_email(leave_id):
+    leave = LeavesHistoryModel.objects.get(pk=leave_id.id)
+    to=EmployeeModel.objects.get(pk=leave.employee.employee_id)
+    to_email=to.email
+    print([leave.employee.email])
+    approval_url = f"http://127.0.0.1:8000/api/employee-leave-approve/{leave_id.id}/"
+    cancellation_url = f"http://127.0.0.1:8000/api/employee-leave-cancel/{leave_id.id}/"
+    # email_body = render_to_string('leave_approval_email.html', {'leave': leave, 'approval_url': approval_url, 'cancellation_url': cancellation_url})
+    email_body = f"""
+    <html>
+    <body>
+        <p>Leave Request Approval:</p>
+        <p>Details:</p>
+        <ul>
+            <li>From: {leave.from_date}</li>
+            <li>To: {leave.to_date}</li>
+            <li>Number of Days: {leave.number_of_days}</li>
+        </ul>
+        <a href="{approval_url}">Approve</a>
+        <a href="{cancellation_url}">Cancel</a>
+    </body>
+    </html>
+    """
+    try:
+        send_mail(
+            'Leave Request Action Required',
+            strip_tags(email_body),
+            'udaykiranreddy9908@gmail.com',
+            [leave.employee.email],
+            html_message=email_body,
+        )
+    except Exception as e:
+        print(e)
+
+# @api_view(['POST'])
+# def approve_leave(request, leave_id):
+
