@@ -18,5 +18,5 @@ urlpatterns = [
     path('', include(router.urls)),
     path('employees-position/<str:employee_position>/', EmployeePositionAPIView.as_view(), name='employee-position-api'),
     path('employee-leave-approve/<int:leave_id>/', EmployeeLeaveApproveAPI.as_view(), name='employee-leave-approve'),  
-    path('employee-leave-cancel/<int:leave_id>/', EmployeeLeaveCancelAPI.as_view(), name='employee-leave-approve'),
+    path('employee-leave-cancel/<int:leave_id>/', EmployeeLeaveCancelAPI.as_view(), name='employee-leave-cancel'),
 ]   

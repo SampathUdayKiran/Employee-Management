@@ -67,6 +67,8 @@ class EmployeeModelList(generics.ListAPIView):
     queryset = EmployeeModel.objects.all()
     serializer_class = EmployeeModelSerializer
     # permission_classes = [IsAuthenticated]
+
+
 class EmployeePositionAPIView(generics.ListAPIView):
     serializer_class = EmployeeModelSerializer
 
@@ -78,25 +80,29 @@ class EmployeePositionAPIView(generics.ListAPIView):
 class FileUploadView(CreateAPIView):
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
+
     def create(self, request, *args, **kwargs):
         employee_id = request.data.get('employee')
         print(request.data)
-        file_upload_instance = FileUpload.objects.filter(employee=employee_id).first()
+        file_upload_instance = FileUpload.objects.filter(
+            employee=employee_id).first()
         if file_upload_instance:
-            existing_file_path = os.path.join(settings.MEDIA_ROOT, str(file_upload_instance.file))
+            existing_file_path = os.path.join(
+                settings.MEDIA_ROOT, str(file_upload_instance.file))
             if os.path.exists(existing_file_path):
                 os.remove(existing_file_path)
-            serializer = self.get_serializer(file_upload_instance, data=request.data, partial=True)
+            serializer = self.get_serializer(
+                file_upload_instance, data=request.data, partial=True)
         else:
             serializer = self.get_serializer(data=request.data)
 
-       
         serializer.is_valid(raise_exception=True)
-    
+
         self.perform_create(serializer)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-    
+
+
 class EmployeeCreateAPIView(generics.CreateAPIView):
     serializer_class = EmployeeModelSerializer
 
@@ -152,10 +158,12 @@ class LeavesHistoryViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         employee_id = self.kwargs['employee_id']
-        return LeavesHistoryModel.objects.filter(employee_id=employee_id)
+        return LeavesHistoryModel.objects.filter(employee_id=employee_id).order_by('-id')
+
 
 class ApplyLeaveAPIView(generics.CreateAPIView):
     serializer_class = ApplyLeavesSerializer
+
     def post(self, request, *args, **kwargs):
         serializer = ApplyLeavesSerializer(data=request.data)
         if serializer.is_valid():
@@ -180,11 +188,11 @@ class ApplyLeaveAPIView(generics.CreateAPIView):
             else:
                 leaves_model.unpaid_leaves_consumed += serializer.validated_data['number_of_days']
             leaves_model.save()
-            instance=serializer.save()
+            instance = serializer.save()
             send_email(instance)
             return Response({'message': 'Leave applied sucessfully'}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
 
 # class EmployeeLeaveApproveAPI(generics.CreateAPIView):
 #     serializer_class = EmployeeLeaveApproveSerializer
@@ -197,34 +205,37 @@ class ApplyLeaveAPIView(generics.CreateAPIView):
 #             return Response({'message': 'Leave approved'}, status=status.HTTP_201_CREATED)
 #         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 class EmployeeLeaveApproveAPI(APIView):
-    def get(self, request,leave_id):
+    def get(self, request, leave_id):
         try:
-            leave=LeavesHistoryModel.objects.get(pk=leave_id)
-            if(leave.status=='PENDING'):
-                leave.approved_by=leave.notify.employee_name
-                leave.status='APPROVED'
+            leave = LeavesHistoryModel.objects.get(pk=leave_id)
+            if (leave.status == 'PENDING'):
+                leave.approved_by = leave.notify.employee_name
+                leave.status = 'APPROVED'
                 leave.save()
                 return Response({'message': 'Leave approved'}, status=status.HTTP_201_CREATED)
             else:
                 return Response({'message': 'Action not allowed'}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             print(e)
+
+
 class EmployeeLeaveCancelAPI(APIView):
-    def get(self, request,leave_id):
+    def get(self, request, leave_id):
         try:
-            leave=LeavesHistoryModel.objects.get(pk=leave_id)
-            if(leave.status=='PENDING'):
-                leave.approved_by=leave.notify.employee_name
-                leave.status='CANCELLED'
-                leaves_model = LeavesModel.objects.get(employee_id=leave.employee.employee_id)
-                if(leave.leave_type=='sick'):
-                    leaves_model.sick_leaves_consumed-=leave.number_of_days
-                    leaves_model.leaves_consumed-=leave.number_of_days
-                elif(leave.leave_type=='casual'):
-                    leaves_model.casual_leaves_consumed-=leave.number_of_days
-                    leaves_model.leaves_consumed-=leave.number_of_days
+            leave = LeavesHistoryModel.objects.get(pk=leave_id)
+            if (leave.status == 'PENDING'):
+                leave.approved_by = leave.notify.employee_name
+                leave.status = 'CANCELLED'
+                leaves_model = LeavesModel.objects.get(
+                    employee_id=leave.employee.employee_id)
+                if (leave.leave_type == 'sick'):
+                    leaves_model.sick_leaves_consumed -= leave.number_of_days
+                    leaves_model.leaves_consumed -= leave.number_of_days
+                elif (leave.leave_type == 'casual'):
+                    leaves_model.casual_leaves_consumed -= leave.number_of_days
+                    leaves_model.leaves_consumed -= leave.number_of_days
                 else:
-                    leaves_model.unpaid_leaves_consumed-=leave.number_of_days
+                    leaves_model.unpaid_leaves_consumed -= leave.number_of_days
                 leave.save()
                 leaves_model.save()
                 return Response({'message': 'Leave cancelled'}, status=status.HTTP_201_CREATED)
@@ -233,14 +244,15 @@ class EmployeeLeaveCancelAPI(APIView):
 
         except Exception as e:
             print(e)
-    
+
+
 def send_email(leave_id):
     leave = LeavesHistoryModel.objects.get(pk=leave_id.id)
-    to=EmployeeModel.objects.get(pk=leave.employee.employee_id)
-    to_email=to.email
+    to = EmployeeModel.objects.get(pk=leave.employee.employee_id)
+    to_email = to.email
     print([leave.employee.email])
-    approval_url = f"http://127.0.0.1:8000/api/employee-leave-approve/{leave_id.id}/"
-    cancellation_url = f"http://127.0.0.1:8000/api/employee-leave-cancel/{leave_id.id}/"
+    approval_url = f"https://udaykiran1508.pythonanywhere.com/api/employee-leave-approve/{leave_id.id}/"
+    cancellation_url = f"https://udaykiran1508.pythonanywhere.com/employee-leave-cancel/{leave_id.id}/"
     # email_body = render_to_string('leave_approval_email.html', {'leave': leave, 'approval_url': approval_url, 'cancellation_url': cancellation_url})
     email_body = f"""
     <html>
@@ -270,4 +282,3 @@ def send_email(leave_id):
 
 # @api_view(['POST'])
 # def approve_leave(request, leave_id):
-
