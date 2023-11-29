@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from login.models import EmployeeModel
-from .models import FileUpload, LeavesHistoryModel, LeavesModel
+from .models import AttendenceLogModel, FileUpload, HolidayCalenderModel, LeavesHistoryModel, LeavesModel
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -63,3 +63,14 @@ class ApplyLeavesSerializer(serializers.ModelSerializer):
             data['approved_by'] = '-'
         data['status'] = 'PENDING'
         return data
+    
+
+class AttendenceLogSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=AttendenceLogModel
+        fields='__all__'
+class HolidayCalenderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=HolidayCalenderModel
+        fields='__all__'
+        

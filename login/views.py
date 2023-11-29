@@ -1,3 +1,4 @@
+from django.utils import timezone
 import os
 from rest_framework.response import Response
 from rest_framework.authtoken.models import Token
@@ -11,8 +12,8 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView
-from .models import FileUpload, LeavesHistoryModel, LeavesModel
-from .serializers import ApplyLeavesSerializer, EmployeeLeaveApproveSerializer, FileUploadSerializer, LeavesHistorySerializer, LeavesModelSerializer
+from .models import FileUpload, HolidayCalenderModel, LeavesHistoryModel, LeavesModel
+from .serializers import ApplyLeavesSerializer, AttendenceLogSerializer, EmployeeLeaveApproveSerializer, FileUploadSerializer, HolidayCalenderSerializer, LeavesHistorySerializer, LeavesModelSerializer
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 import subprocess
@@ -22,6 +23,8 @@ from django.template.loader import render_to_string
 from django.utils.html import strip_tags
 from django.utils.http import urlencode
 from rest_framework.decorators import api_view
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
 
 
 class UserRegistrationView(generics.CreateAPIView):
@@ -80,27 +83,31 @@ class EmployeePositionAPIView(generics.ListAPIView):
 class FileUploadView(CreateAPIView):
     queryset = FileUpload.objects.all()
     serializer_class = FileUploadSerializer
-
+    @method_decorator(csrf_exempt)
     def create(self, request, *args, **kwargs):
         employee_id = request.data.get('employee')
         print(request.data)
-        file_upload_instance = FileUpload.objects.filter(
-            employee=employee_id).first()
-        if file_upload_instance:
-            existing_file_path = os.path.join(
-                settings.MEDIA_ROOT, str(file_upload_instance.file))
-            if os.path.exists(existing_file_path):
-                os.remove(existing_file_path)
-            serializer = self.get_serializer(
-                file_upload_instance, data=request.data, partial=True)
-        else:
-            serializer = self.get_serializer(data=request.data)
+        print(employee_id)
+        try:
+            file_upload_instance = FileUpload.objects.filter(
+                employee=employee_id).order_by('-id').first()
+            print(file_upload_instance)
+            if file_upload_instance:
+                existing_file_path = os.path.join(
+                    settings.MEDIA_ROOT, str(file_upload_instance.file))
+                if os.path.exists(existing_file_path):
+                    os.remove(existing_file_path)
+                serializer = self.get_serializer(
+                    file_upload_instance, data=request.data, partial=True)
+            else:
+                serializer = self.get_serializer(data=request.data)
 
-        serializer.is_valid(raise_exception=True)
+            serializer.is_valid(raise_exception=True)
+            self.perform_create(serializer)
 
-        self.perform_create(serializer)
-
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            print(e)
 
 
 class EmployeeCreateAPIView(generics.CreateAPIView):
@@ -248,11 +255,8 @@ class EmployeeLeaveCancelAPI(APIView):
 
 def send_email(leave_id):
     leave = LeavesHistoryModel.objects.get(pk=leave_id.id)
-    to = EmployeeModel.objects.get(pk=leave.employee.employee_id)
-    to_email = to.email
-    print([leave.employee.email])
-    approval_url = f"https://udaykiran1508.pythonanywhere.com/api/employee-leave-approve/{leave_id.id}/"
-    cancellation_url = f"https://udaykiran1508.pythonanywhere.com/employee-leave-cancel/{leave_id.id}/"
+    approval_url = f"{settings.PROD_URL_1}employee-leave-approve/{leave_id.id}/"
+    cancellation_url = f"h{settings.PROD_URL_1}employee-leave-cancel/{leave_id.id}/"
     # email_body = render_to_string('leave_approval_email.html', {'leave': leave, 'approval_url': approval_url, 'cancellation_url': cancellation_url})
     email_body = f"""
     <html>
@@ -260,9 +264,11 @@ def send_email(leave_id):
         <p>Leave Request Approval:</p>
         <p>Details:</p>
         <ul>
+            <li>Employee: {leave.employee.employee_name} ({leave.employee.employee_id})</li>
             <li>From: {leave.from_date}</li>
             <li>To: {leave.to_date}</li>
             <li>Number of Days: {leave.number_of_days}</li>
+            <li>Reason: {leave.reason}</li>
         </ul>
         <a href="{approval_url}">Approve</a>
         <a href="{cancellation_url}">Cancel</a>
@@ -274,7 +280,7 @@ def send_email(leave_id):
             'Leave Request Action Required',
             strip_tags(email_body),
             'udaykiranreddy9908@gmail.com',
-            [leave.employee.email],
+            [leave.notify.email],
             html_message=email_body,
         )
     except Exception as e:
@@ -282,3 +288,33 @@ def send_email(leave_id):
 
 # @api_view(['POST'])
 # def approve_leave(request, leave_id):
+
+class AttendenceLogAPIView(generics.CreateAPIView):
+    serializer_class=AttendenceLogSerializer
+
+class HolidaysListCreateAPIView(generics.CreateAPIView):
+    serializer_class=HolidayCalenderSerializer
+
+# class HolidaysListAPIView(APIView):
+#     def get(self, request):
+#         holiday_list=HolidayCalenderModel.objects.all()
+#         serializer=HolidayCalenderSerializer(data=holiday_list)
+#         if(serializer.is_valid()):
+#             return serializer.data
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST) 
+class HolidaysListAPIView(generics.ListAPIView):
+    serializer_class = HolidayCalenderSerializer
+    def get_queryset(self):
+        # Customize the queryset based on your requirements
+        # For example, you can add extra filters, annotations, or any other modifications
+        # Filter holidays that are upcoming and set is_floater to True
+        try:
+            current_date = timezone.now().date()
+            next_holiday = HolidayCalenderModel.objects.filter(date__gte=current_date).first()
+            queryset =HolidayCalenderModel.objects.all().order_by('date')
+            for holiday in queryset:
+                if(holiday.id==next_holiday.id):
+                    holiday.is_floater=True
+            return queryset
+        except Exception as e:
+            print(e)

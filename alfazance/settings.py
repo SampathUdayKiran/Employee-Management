@@ -149,8 +149,12 @@ CORS_ORIGIN_ALLOW_ALL = True
 
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
-EMAIL_PORT = 587  
-EMAIL_USE_TLS = True  
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
 EMAIL_HOST_USER = "udaykiranreddy9908@gmail.com"
 EMAIL_HOST_PASSWORD = "mwqa pqaq aptm lizk"
 # settings.py
+
+LOCAL_URL = "http://127.0.0.1:8000/api/"
+PROD_URL_1 = "https://udaykiran15.pythonanywhere.com/api/"
+PROD_URL_2 = "https://udaykiran1508.pythonanywhere.com/api/"
