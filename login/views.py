@@ -12,8 +12,8 @@ from rest_framework import status
 from django.contrib.auth.models import User
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.generics import CreateAPIView
-from .models import FileUpload, HolidayCalenderModel, LeavesHistoryModel, LeavesModel
-from .serializers import ApplyLeavesSerializer, AttendenceLogSerializer, EmployeeLeaveApproveSerializer, FileUploadSerializer, HolidayCalenderSerializer, LeavesHistorySerializer, LeavesModelSerializer
+from .models import AttendenceLogModel, FileUpload, HolidayCalenderModel, LeavesHistoryModel, LeavesModel
+from .serializers import ApplyLeavesSerializer, AttendenceLogSerializer, CheckInSerializer, CheckOutSerializer, EmployeeLeaveApproveSerializer, FileUploadSerializer, HolidayCalenderSerializer, LeavesHistorySerializer, LeavesModelSerializer
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 import subprocess
@@ -252,7 +252,6 @@ class EmployeeLeaveCancelAPI(APIView):
         except Exception as e:
             print(e)
 
-
 def send_email(leave_id):
     leave = LeavesHistoryModel.objects.get(pk=leave_id.id)
     approval_url = f"{settings.PROD_URL_1}employee-leave-approve/{leave_id.id}/"
@@ -286,9 +285,6 @@ def send_email(leave_id):
     except Exception as e:
         print(e)
 
-# @api_view(['POST'])
-# def approve_leave(request, leave_id):
-
 class AttendenceLogAPIView(generics.CreateAPIView):
     serializer_class=AttendenceLogSerializer
 
@@ -318,3 +314,42 @@ class HolidaysListAPIView(generics.ListAPIView):
             return queryset
         except Exception as e:
             print(e)
+class CheckInAPIView(generics.CreateAPIView):
+    serializer_class=CheckInSerializer
+    def post(self,request):
+        try:
+
+            serializer=CheckInSerializer(data=request.data)
+            if(serializer.is_valid()):
+                current_date = timezone.now().date()
+                # log_record=AttendenceLogModel.objects.filter(date=current_date, employee=serializer.data['employee']).first()
+                serializer.validated_data['check_in_date']=current_date
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+        except Exception as e:
+            print(e)
+    
+class AttendenceLogListAPIView(generics.ListAPIView):
+    serializer_class=AttendenceLogSerializer
+    def get_queryset(self):
+        try:
+            queryset =AttendenceLogModel.objects.all()
+            return queryset
+        except Exception as e:
+            print(e)
+            
+
+
+
+
+
+
+
+
+
+
+# class CheckInAPIView(generics.CreateAPIView):
+#     serializer_class=CheckOutSerializer
+

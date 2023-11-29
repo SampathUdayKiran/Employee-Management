@@ -53,9 +53,9 @@ class LeavesHistoryModel(models.Model):
 class AttendenceLogModel(models.Model):
     check_in_date=models.DateField()
     check_in_time=models.DateTimeField()
-    check_out_time=models.DateTimeField()
-    effective_hours=models.DurationField()
-    gross_hours=models.DurationField()
+    check_out_time=models.DateTimeField(null=True, blank=True)
+    effective_hours=models.DurationField(null=True, blank=True)
+    gross_hours=models.DurationField(null=True, blank=True)
     employee = models.ForeignKey(EmployeeModel, on_delete=models.CASCADE)
 
 class HolidayCalenderModel(models.Model):

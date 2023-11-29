@@ -1,5 +1,5 @@
 from django.urls import include, path
-from .views import ApplyLeaveAPIView, AttendenceLogAPIView, EmployeeCreateAPIView, EmployeeDetailsAPIView, EmployeeLeaveApproveAPI, EmployeeLeaveCancelAPI, EmployeeLeavesAPIView, EmployeeModelList, EmployeePositionAPIView, FileUploadView, HolidaysListAPIView, HolidaysListCreateAPIView, LeavesHistoryViewSet, UserRegistrationView, UserLoginView, UserListView, YourApiView, download_file
+from .views import ApplyLeaveAPIView, AttendenceLogAPIView, AttendenceLogListAPIView, CheckInAPIView, EmployeeCreateAPIView, EmployeeDetailsAPIView, EmployeeLeaveApproveAPI, EmployeeLeaveCancelAPI, EmployeeLeavesAPIView, EmployeeModelList, EmployeePositionAPIView, FileUploadView, HolidaysListAPIView, HolidaysListCreateAPIView, LeavesHistoryViewSet, UserRegistrationView, UserLoginView, UserListView, YourApiView, download_file
 from rest_framework.routers import DefaultRouter
 router = DefaultRouter()
 router.register(r'leaveshistory/(?P<employee_id>[^/.]+)', LeavesHistoryViewSet, basename='leaveshistory')
@@ -19,7 +19,9 @@ urlpatterns = [
     path('employees-position/<str:employee_position>/', EmployeePositionAPIView.as_view(), name='employee-position-api'),
     path('employee-leave-approve/<int:leave_id>/', EmployeeLeaveApproveAPI.as_view(), name='employee-leave-approve'),  
     path('employee-leave-cancel/<int:leave_id>/', EmployeeLeaveCancelAPI.as_view(), name='employee-leave-cancel'),
-    path('attendence-log/', AttendenceLogAPIView.as_view(), name='attendence-log'),
+    path('attendence-log/create', AttendenceLogAPIView.as_view(), name='attendence-log-create'),
     path('holidays-list/create/', HolidaysListCreateAPIView.as_view(), name='holidays-list-create'),
     path('holidays-list/', HolidaysListAPIView.as_view(), name='holidays-list'),
+    path('attendence-log/', AttendenceLogListAPIView.as_view(), name='attendence-log'),
+    path('check-in/', CheckInAPIView.as_view(), name='check-in'),
 ]   

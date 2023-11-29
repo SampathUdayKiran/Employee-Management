@@ -73,4 +73,13 @@ class HolidayCalenderSerializer(serializers.ModelSerializer):
     class Meta:
         model=HolidayCalenderModel
         fields='__all__'
-        
+
+class CheckInSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=AttendenceLogModel
+        fields=['check_in_time','employee']
+
+class CheckOutSerializer(serializers.ModelSerializer):
+    class Meta:
+        model=AttendenceLogModel
+        fields=['check_out_time','employee']
